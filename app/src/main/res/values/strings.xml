@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Stocks Detective</string>
+    <string name="alerts_channel">Unusual moves</string>
+    <string name="alerts_channel_description">Alerts when a holding makes an unusual, stock-specific move.</string>
+</resources>
