@@ -77,9 +77,9 @@ CI: the GitHub workflow now also builds `app-release.aab` (versionCode = run num
 |---|---|
 | App icon 512×512 | `icon-512.png` |
 | Feature graphic 1024×500 | `feature-graphic-1024x500.png` |
-| Phone screenshots (1200×2400, 7) | `screenshots/01…07-*.png` |
+| Phone screenshots (1200×2133, 9:16, 7) | `screenshots/01…07-*.png` |
 
-The originals in `docs/screenshots` are 1200×2580, which is over Play's 2:1 aspect limit, so these copies are cropped to 1200×2400.
+The originals in `docs/screenshots` are 1200×2580. Play requires phone screenshots to be exactly 16:9 or 9:16, so these copies are cropped to 1200×2133.
 
 **Category:** Finance · **Tags:** stocks, portfolio, market news
 **Contact email:** stasgold@gmail.com
