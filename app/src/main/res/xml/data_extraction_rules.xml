@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: back up and transfer the portfolio, never the Gemini API key. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="stocks_detective_secrets.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="stocks_detective_secrets.xml" />
+    </device-transfer>
+</data-extraction-rules>

@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -80,6 +81,7 @@ fun VerdictBadge(verdict: Verdict, compact: Boolean = false) {
 fun AuthorBadge(author: ReportAuthor) {
     val (icon, label) = when (author) {
         ReportAuthor.ON_DEVICE_AI -> Icons.Filled.AutoAwesome to "Gemini Nano · on-device"
+        ReportAuthor.CLOUD_AI -> Icons.Filled.Cloud to "Gemini · cloud"
         ReportAuthor.RULE_BASED -> Icons.Filled.Functions to "Quick read · rule-based"
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {

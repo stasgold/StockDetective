@@ -20,10 +20,15 @@ class StocksDetectiveApp : Application() {
     override fun onCreate() {
         super.onCreate()
         val store = SharedPrefsStore(this)
-        settings = Settings(store)
+        settings = Settings(store, SharedPrefsStore(this, SECRETS_FILE))
         holdings = HoldingsStore(store)
-        model = AppModel(settings, DetectiveAI(), MainScope())
+        model = AppModel(settings, DetectiveAI().also(settings::applyTo), MainScope())
         BackgroundInvestigator.createChannel(this)
         if (settings.alertsEnabled) BackgroundInvestigator.schedule(this)
+    }
+
+    companion object {
+        /** Preferences file holding the Gemini API key; excluded from backups (res/xml). */
+        const val SECRETS_FILE = "stocks_detective_secrets"
     }
 }

@@ -20,6 +20,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.stocksdetective.app.MainActivity
 import com.stocksdetective.app.R
+import com.stocksdetective.app.StocksDetectiveApp
 import com.stocksdetective.app.ai.DetectiveAI
 import com.stocksdetective.app.data.HoldingsStore
 import com.stocksdetective.app.data.Settings
@@ -118,14 +119,14 @@ object BackgroundInvestigator {
 class InvestigationWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val store = SharedPrefsStore(applicationContext)
-        val settings = Settings(store)
+        val settings = Settings(store, SharedPrefsStore(applicationContext, StocksDetectiveApp.SECRETS_FILE))
         if (!settings.alertsEnabled) return Result.success()
         val holdings = HoldingsStore(store).current.map { it.input }
         if (holdings.isEmpty()) return Result.success()
         val provider = if (settings.demoMode) DemoMarketData() else YahooMarketData()
         val builder = CaseBuilder(provider)
         // On-device AI may refuse background requests; the detective then falls back to rules.
-        val ai = DetectiveAI().also { it.refreshStatus() }
+        val ai = DetectiveAI().also { settings.applyTo(it); it.refreshStatus() }
         for (file in BackgroundInvestigator.casesToAlert(holdings, builder, settings.alertSensitivity, settings)) {
             val report = ai.investigate(file)
             BackgroundInvestigator.notify(applicationContext, report, file.facts)

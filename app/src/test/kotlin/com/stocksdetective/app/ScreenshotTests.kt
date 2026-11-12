@@ -91,6 +91,13 @@ class ScreenshotTests {
 
     @Test fun settings() = shot("settings") { SettingsScreen(deps) }
 
+    @Config(qualifiers = "w400dp-h1100dp-xxhdpi")
+    @Test fun settingsCloud() {
+        deps.settings.aiEngine = com.stocksdetective.app.ai.AIEngine.CLOUD
+        deps.settings.applyTo(deps.model.ai)
+        shot("settings-cloud") { SettingsScreen(deps) }
+    }
+
     @Test fun import() {
         compose.setContent { StocksDetectiveTheme { ImportScreen(deps) {} } }
         compose.onNodeWithText("SYM   QTY   PRICE", substring = true).performTextInput(

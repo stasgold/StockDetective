@@ -31,6 +31,8 @@ data class Cause(
 enum class ReportAuthor {
     /** Gemini Nano, running on-device through Android AICore. */
     ON_DEVICE_AI,
+    /** Gemini in Google's cloud, through the Gemini API with the user's own key. */
+    CLOUD_AI,
     RULE_BASED;
 
     val isAI: Boolean get() = this != RULE_BASED

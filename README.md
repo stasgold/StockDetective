@@ -22,12 +22,14 @@ Most apps tell you *"AAPL is down 3%."* Stocks Detective tells you **why**:
 | Apple Foundation Models (on-device) | **Gemini Nano** through ML Kit's GenAI Prompt API (Android AICore), `app/.../ai/OnDeviceModel.kt` |
 | `@Generable` structured output | The model is asked for JSON, parsed leniently, then checked by the same `ReportValidator` (wrong direction or invented numbers are swapped for the rule-based text) |
 | Model tool calling in "Interrogate" | The detective looks up the tickers a question mentions (prices + headlines) and gives them to the model, since Gemini Nano function calling isn't on every phone |
-| Private Cloud Compute option | Not ported: there's no equivalent with the same privacy promise. On-device or rule-based only |
+| Private Cloud Compute option | **Gemini cloud** (Settings › AI model): Google's larger Gemini models through the Gemini API with *your own* API key. Google doesn't let apps use a consumer Gemini subscription, so a key from [Google AI Studio](https://aistudio.google.com/apikey) is needed (it has a free tier). Like Private Cloud on iOS it reads more evidence (10 headlines per stock, the whole portfolio for the briefing) and falls back to on-device automatically. Unlike Private Cloud, your holdings and headlines are sent to Google. The key is stored in a separate preferences file that is excluded from Android backups |
 | SwiftData + `@AppStorage` | JSON in SharedPreferences (`HoldingsStore`, `Settings`) |
 | `BGAppRefreshTask` + notifications | WorkManager every ~30 min + a notification channel; tapping an alert opens the case |
 | SwiftUI + Swift Charts | Jetpack Compose (Material 3) and a hand-drawn Canvas chart with drag-to-inspect, volume bars and the dashed previous close |
 
-Phones without Gemini Nano (most phones today; it needs e.g. Pixel 9+ or a Galaxy S25) get the rule-based analyst, exactly like iPhones without Apple Intelligence. On supported phones Settings offers the one-time model download.
+Phones without Gemini Nano (most phones today; it needs e.g. Pixel 9+ or a Galaxy S25) get the rule-based analyst, exactly like iPhones without Apple Intelligence, unless you turn on Gemini cloud. On supported phones Settings offers the one-time model download.
+
+Model order for every request: Gemini cloud (if chosen and a key is set) → on-device Gemini Nano → rule-based analyst. The default cloud model is `gemini-3.6-flash`; any Gemini API model name can be entered in Settings.
 
 ## Requirements
 

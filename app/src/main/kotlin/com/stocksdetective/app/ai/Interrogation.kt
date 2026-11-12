@@ -80,7 +80,7 @@ class Interrogation(
         if (!ai.isAvailable) {
             messages += ChatMessage(
                 ChatMessage.Role.DETECTIVE,
-                "Follow-up questions need on-device AI (Gemini Nano). Check Settings › On-device AI on a supported phone.",
+                "Follow-up questions need AI: on-device Gemini Nano on a supported phone, or Gemini cloud with your API key. See Settings › AI model.",
             )
             return
         }
@@ -95,10 +95,10 @@ class Interrogation(
                 if (tools.isNotEmpty()) append("TOOL RESULTS\n$tools\n\n")
                 append("QUESTION: $q")
             }
-            val answer = ai.ask(prompt, instructions = context, temperature = 0.5f, maxOutputTokens = 300)
+            val answer = ai.ask(instructions = context, temperature = 0.5f, maxOutputTokens = 300) { prompt }
             messages += ChatMessage(
                 ChatMessage.Role.DETECTIVE,
-                answer?.trim() ?: "I couldn't finish that line of inquiry. Try rephrasing.",
+                answer?.text?.trim() ?: "I couldn't finish that line of inquiry. Try rephrasing.",
             )
         } finally {
             isThinking = false

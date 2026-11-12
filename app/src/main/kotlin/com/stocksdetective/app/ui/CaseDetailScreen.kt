@@ -168,7 +168,7 @@ private fun VerdictCard(r: InvestigationReport, investigating: Boolean) {
             if (investigating) {
                 CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
                 Spacer(Modifier.width(6.dp))
-                Text("Gemini Nano is investigating…", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Gemini is investigating…", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

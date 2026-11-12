@@ -1,6 +1,9 @@
 package com.stocksdetective.app.data
 
 import android.content.Context
+import com.stocksdetective.app.ai.AIEngine
+import com.stocksdetective.app.ai.CloudConfig
+import com.stocksdetective.app.ai.DetectiveAI
 import com.stocksdetective.kit.HoldingInput
 import com.stocksdetective.kit.Sector
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,8 +97,11 @@ class HoldingsStore(private val store: KeyValueStore) {
     }
 }
 
-/** User preferences (the iOS app's `@AppStorage` values). */
-class Settings(private val store: KeyValueStore) {
+/**
+ * User preferences (the iOS app's `@AppStorage` values). The Gemini API key lives in
+ * [secrets], a separate file that is excluded from Android backups.
+ */
+class Settings(private val store: KeyValueStore, private val secrets: KeyValueStore = store) {
     var demoMode: Boolean
         get() = store.getBoolean(DEMO)
         set(v) = store.putBoolean(DEMO, v)
@@ -106,6 +112,25 @@ class Settings(private val store: KeyValueStore) {
     var alertSensitivity: Double
         get() = store.getFloat(SENSITIVITY, 2f).toDouble()
         set(v) = store.putFloat(SENSITIVITY, v.toFloat())
+
+    var aiEngine: AIEngine
+        get() = AIEngine.entries.firstOrNull { it.name == store.getString(ENGINE) } ?: AIEngine.ON_DEVICE
+        set(v) = store.putString(ENGINE, v.name)
+    var geminiApiKey: String
+        get() = secrets.getString(API_KEY).orEmpty()
+        set(v) = secrets.putString(API_KEY, v.trim().ifEmpty { null })
+    var geminiModel: String
+        get() = store.getString(MODEL)?.takeIf { it.isNotBlank() } ?: DEFAULT_GEMINI_MODEL
+        set(v) = store.putString(MODEL, v.trim().ifEmpty { null })
+
+    /** The cloud settings, or null without a key. */
+    val cloudConfig: CloudConfig? get() = geminiApiKey.takeIf { it.isNotBlank() }?.let { CloudConfig(it, geminiModel) }
+
+    /** Copies the AI choices into [ai] (at launch, and in the background worker). */
+    fun applyTo(ai: DetectiveAI) {
+        ai.engine = aiEngine
+        ai.cloudConfig = cloudConfig
+    }
 
     /** One alert per symbol per day. Returns false if this symbol was already alerted today. */
     fun markAlerted(key: String): Boolean {
@@ -118,5 +143,10 @@ class Settings(private val store: KeyValueStore) {
         const val DEMO = "demoMode"
         const val ALERTS = "alertsEnabled"
         const val SENSITIVITY = "alertSensitivity"
+        const val ENGINE = "aiEngine"
+        const val MODEL = "geminiModel"
+        const val API_KEY = "geminiApiKey"
+        /** Generally available on the Gemini API as of Nov 2026; editable in Settings for newer models. */
+        const val DEFAULT_GEMINI_MODEL = "gemini-3.6-flash"
     }
 }

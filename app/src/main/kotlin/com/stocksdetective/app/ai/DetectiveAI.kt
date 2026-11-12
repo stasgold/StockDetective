@@ -12,6 +12,7 @@ import com.stocksdetective.kit.ReportAuthor
 import com.stocksdetective.kit.ReportValidator
 import com.stocksdetective.kit.RuleBasedDetective
 import com.stocksdetective.kit.Verdict
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -52,15 +53,41 @@ data class PortfolioBriefing(
     val createdAt: Instant = Instant.now(),
 )
 
+/** Which model the user prefers. On-device is the default (private, offline). */
+enum class AIEngine(val label: String) { ON_DEVICE("On-device"), CLOUD("Gemini cloud") }
+
+/** A model's reply and who wrote it. */
+data class Answer(val text: String, val author: ReportAuthor)
+
 /**
- * Wraps on-device Gemini Nano. Falls back to the rule-based detective whenever on-device AI
- * isn't available or returns something unusable, so the app always explains moves.
+ * Picks the model for each request and falls back gracefully (the iOS ModelRouter):
+ * Gemini in the cloud (if chosen and a key is set) → on-device Gemini Nano → the caller's
+ * rule-based fallback, so the app always explains moves.
  */
-class DetectiveAI(private val model: OnDeviceModel = GeminiNanoModel()) {
+class DetectiveAI(
+    private val model: OnDeviceModel = GeminiNanoModel(),
+    private val cloud: CloudModel = GeminiCloudModel(),
+) {
+    /** On-device model status. */
     var status: AiStatus by mutableStateOf(AiStatus.Checking)
         private set
 
-    val isAvailable: Boolean get() = status == AiStatus.Available
+    var engine: AIEngine by mutableStateOf(AIEngine.ON_DEVICE)
+
+    /** The user's Gemini API key and model, or null when no key is set. */
+    var cloudConfig: CloudConfig? by mutableStateOf(null)
+
+    /** Why the last cloud request failed (shown in Settings); cleared by the next success. */
+    var lastCloudError: String? by mutableStateOf(null)
+        private set
+
+    val onDeviceAvailable: Boolean get() = status == AiStatus.Available
+
+    /** The cloud model will be tried first. */
+    val cloudReady: Boolean get() = engine == AIEngine.CLOUD && cloudConfig.let { it != null && it.apiKey.isNotBlank() && it.model.isNotBlank() }
+
+    /** Any AI model can answer. */
+    val isAvailable: Boolean get() = onDeviceAvailable || cloudReady
 
     /** The on-device model handles one request at a time. */
     private val lock = Mutex()
@@ -76,41 +103,80 @@ class DetectiveAI(private val model: OnDeviceModel = GeminiNanoModel()) {
         if (refreshStatus() == AiStatus.Available) model.warmup()
     }
 
-    /** Runs a prompt, or returns null when no model could answer. */
-    suspend fun ask(prompt: String, instructions: String = INSTRUCTIONS, temperature: Float = 0.3f, maxOutputTokens: Int = 512): String? {
-        if (!isAvailable) return null
-        return lock.withLock {
-            runCatching { model.generate(instructions, prompt, temperature, maxOutputTokens) }.getOrNull()?.takeIf { it.isNotBlank() }
+    /**
+     * Runs a prompt on the preferred model, falling back from the cloud to on-device.
+     * [prompt] is built per model, since the cloud model can read much more evidence.
+     * Returns null when no model could answer.
+     */
+    suspend fun ask(
+        instructions: String = INSTRUCTIONS,
+        temperature: Float = 0.3f,
+        maxOutputTokens: Int = 512,
+        json: Boolean = false,
+        prompt: (ReportAuthor) -> String,
+    ): Answer? {
+        val config = cloudConfig
+        if (cloudReady && config != null) {
+            try {
+                val text = cloud.generate(config, instructions, prompt(ReportAuthor.CLOUD_AI), temperature, maxOutputTokens, json)
+                lastCloudError = null
+                if (text.isNotBlank()) return Answer(text, ReportAuthor.CLOUD_AI)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Offline, bad key, quota used up: carry on with on-device AI.
+                lastCloudError = e.message ?: "Gemini request failed."
+            }
         }
+        if (!onDeviceAvailable) return null
+        return lock.withLock {
+            runCatching { model.generate(instructions, prompt(ReportAuthor.ON_DEVICE_AI), temperature, maxOutputTokens) }
+                .getOrNull()?.takeIf { it.isNotBlank() }?.let { Answer(it, ReportAuthor.ON_DEVICE_AI) }
+        }
+    }
+
+    /** Checks a key and model with a tiny request. Returns null on success, or the problem. */
+    suspend fun testCloud(config: CloudConfig): String? = try {
+        cloud.generate(config, "Reply with the single word OK.", "Are you there?", 0f, 16, json = false)
+        lastCloudError = null
+        null
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        e.message ?: "Gemini request failed."
     }
 
     suspend fun investigate(file: CaseFile): InvestigationReport {
         val fallback = RuleBasedDetective.investigate(file)
-        val prompt = """
-            Investigate this move. The statistical pre-read suggests '${fallback.verdict.key}'; overrule it only if the headlines clearly say otherwise.
-
-            ${file.promptBrief()}
-
-            $REPORT_FORMAT
-        """.trimIndent()
-        val raw = ask(prompt, temperature = 0.3f, maxOutputTokens = 700) ?: return fallback
-        val parsed = parseReport(raw) ?: return fallback
-        return makeReport(file.symbol, parsed, file.facts, fallback)
+        val answer = ask(temperature = 0.3f, maxOutputTokens = 700, json = true) { author ->
+            // The cloud model has a large context, so give it the full evidence locker.
+            val brief = if (author == ReportAuthor.CLOUD_AI) file.promptBrief(headlines = 10, marketHeadlines = 6) else file.promptBrief()
+            """
+            |Investigate this move. The statistical pre-read suggests '${fallback.verdict.key}'; overrule it only if the headlines clearly say otherwise.
+            |
+            |$brief
+            |
+            |$REPORT_FORMAT
+            """.trimMargin()
+        } ?: return fallback
+        val parsed = parseReport(answer.text) ?: return fallback
+        return makeReport(file.symbol, parsed, file.facts, fallback, answer.author)
     }
 
     suspend fun brief(snapshot: PortfolioSnapshot, cases: List<CaseFile>, reports: Map<String, InvestigationReport>): PortfolioBriefing {
         val fallback = ruleBasedBriefing(snapshot, reports)
         if (cases.isEmpty()) return fallback
-        val prompt = """
-            Write today's portfolio briefing. Focus on the holdings that moved the portfolio most and explain why.
-
-            ${snapshot.promptBrief(cases, holdings = 6)}
-
-            $BRIEFING_FORMAT
-        """.trimIndent()
-        val raw = ask(prompt, temperature = 0.4f) ?: return fallback
-        val b = parseBriefing(raw) ?: return fallback
-        return PortfolioBriefing(b.headline, b.summary, b.keyFindings.take(4), b.watchNext.take(3), ReportAuthor.ON_DEVICE_AI)
+        val answer = ask(temperature = 0.4f, json = true) { author ->
+            """
+            |Write today's portfolio briefing. Focus on the holdings that moved the portfolio most and explain why.
+            |
+            |${snapshot.promptBrief(cases, holdings = if (author == ReportAuthor.CLOUD_AI) 25 else 6)}
+            |
+            |$BRIEFING_FORMAT
+            """.trimMargin()
+        } ?: return fallback
+        val b = parseBriefing(answer.text) ?: return fallback
+        return PortfolioBriefing(b.headline, b.summary, b.keyFindings.take(4), b.watchNext.take(3), answer.author)
     }
 
     companion object {
@@ -169,7 +235,10 @@ class DetectiveAI(private val model: OnDeviceModel = GeminiNanoModel()) {
          * Assembles a report from the model's fields, replacing any headline or summary that
          * misstates the move with the rule-based version.
          */
-        internal fun makeReport(symbol: String, r: AIReport, facts: MovementFacts, fallback: InvestigationReport): InvestigationReport {
+        internal fun makeReport(
+            symbol: String, r: AIReport, facts: MovementFacts, fallback: InvestigationReport,
+            author: ReportAuthor = ReportAuthor.ON_DEVICE_AI,
+        ): InvestigationReport {
             val causes = r.causes.filter { it.title.isNotBlank() }.take(3)
                 .map { Cause(it.title, it.detail, it.evidence.ifBlank { null }) }
             val watch = r.watchNext.filter { it.isNotBlank() }.take(3)
@@ -182,7 +251,7 @@ class DetectiveAI(private val model: OnDeviceModel = GeminiNanoModel()) {
                 verdictReasoning = r.verdictReasoning.ifBlank { fallback.verdictReasoning },
                 watchNext = watch.ifEmpty { fallback.watchNext },
                 confidence = r.confidence,
-                author = ReportAuthor.ON_DEVICE_AI,
+                author = author,
             )
         }
 
