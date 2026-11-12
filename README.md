@@ -48,7 +48,7 @@ Extras:
 
 - `./gradlew :detectivekit:test -PliveTests` also runs a test against live Yahoo Finance data.
 - `./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*ScreenshotTests*'` renders every screen with Robolectric into `docs/screenshots/`.
-- Debug launch options: `adb shell am start -n com.stocksdetective.app/.MainActivity --ez seedDemoPortfolio true --es openCase NVDA` (`--es openTab briefing|settings|import` also works).
+- Debug launch options: `adb shell am start -n com.stasgold.stocksdetective/com.stocksdetective.app.MainActivity --ez seedDemoPortfolio true --es openCase NVDA` (`--es openTab briefing|settings|import` also works).
 
 ### Google Play
 

@@ -11,7 +11,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.stocksdetective.app"
+        applicationId = "com.stasgold.stocksdetective"
         // Gemini Nano (on-device AI) needs Android 14+ on supported phones; older phones
         // get the rule-based analyst, so the app itself runs on Android 8+.
         minSdk = 26

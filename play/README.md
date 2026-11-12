@@ -1,6 +1,6 @@
 # Google Play submission kit
 
-Everything needed to publish Stocks Detective (`com.stocksdetective.app`) on Google Play. Assets are in this folder.
+Everything needed to publish Stocks Detective (`com.stasgold.stocksdetective`) on Google Play. Assets are in this folder.
 
 ## 1. One-time: create the upload key
 

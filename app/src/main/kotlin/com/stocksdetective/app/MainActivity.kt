@@ -58,7 +58,7 @@ private enum class Tab(val route: String, val label: String, val icon: ImageVect
 
 /**
  * Intent extras used for debugging and automated smoke tests (the iOS launch arguments):
- *   adb shell am start -n com.stocksdetective.app/.MainActivity --ez seedDemoPortfolio true --es openCase NVDA
+ *   adb shell am start -n com.stasgold.stocksdetective/com.stocksdetective.app.MainActivity --ez seedDemoPortfolio true --es openCase NVDA
  *   --es openTab briefing|settings|import
  */
 object LaunchOptions {
