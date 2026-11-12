@@ -83,7 +83,7 @@ The originals in `docs/screenshots` are 1200×2580, which is over Play's 2:1 asp
 
 **Category:** Finance · **Tags:** stocks, portfolio, market news
 **Contact email:** stasgold@gmail.com
-**Privacy policy URL:** `https://github.com/stasgold/StockDetective/blob/claude/kind-carson-p08snv/docs/PRIVACY.md`
+**Privacy policy URL:** `https://github.com/stasgold/StockDetective/blob/main/docs/PRIVACY.md`
 
 ## 5. App content (Policy › App content)
 
