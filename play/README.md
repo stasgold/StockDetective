@@ -82,8 +82,8 @@ CI: the GitHub workflow now also builds `app-release.aab` (versionCode = run num
 The originals in `docs/screenshots` are 1200×2580, which is over Play's 2:1 aspect limit, so these copies are cropped to 1200×2400.
 
 **Category:** Finance · **Tags:** stocks, portfolio, market news
-**Contact email:** [SUPPORT EMAIL]
-**Privacy policy URL:** `https://github.com/stasgold/StockDetective/blob/main/docs/PRIVACY.md` (or the branch it lives on). First fill in the `[DEVELOPER NAME]` and `[SUPPORT EMAIL]` placeholders in that file.
+**Contact email:** stasgold@gmail.com
+**Privacy policy URL:** `https://github.com/stasgold/StockDetective/blob/claude/kind-carson-p08snv/docs/PRIVACY.md`
 
 ## 5. App content (Policy › App content)
 

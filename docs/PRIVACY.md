@@ -2,7 +2,7 @@
 
 _Last updated: November 12, 2026_
 
-Stocks Detective ("the app") is an independent app made by [DEVELOPER NAME] ("I", "me"). This policy explains what happens to your information when you use the Android app.
+Stocks Detective ("the app") is an independent app made by Stas Goldberg ("I", "me"). This policy explains what happens to your information when you use the Android app.
 
 **Summary:** I don't run any servers and I don't collect your data. Your portfolio stays on your phone. To show prices and news, the app asks public data services about the ticker symbols you follow. If you turn on Gemini cloud, the information needed for an analysis is sent to Google under your own API key.
 
@@ -54,4 +54,4 @@ If this policy changes, I'll update this page and the date above.
 
 ## Contact
 
-Questions: [SUPPORT EMAIL]
+Questions: stasgold@gmail.com
