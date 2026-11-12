@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -14,20 +16,25 @@ android {
         // get the rule-based analyst, so the app itself runs on Android 8+.
         minSdk = 26
         targetSdk = 37
-        versionCode = (System.getenv("BUILD_NUMBER") ?: "1").toInt()
-        versionName = "1.0"
+        // Every upload to Google Play needs a higher versionCode. CI passes BUILD_NUMBER;
+        // locally pass -PversionCode=N (and optionally -PversionName=1.0.1).
+        versionCode = (project.findProperty("versionCode") as String? ?: System.getenv("BUILD_NUMBER") ?: "1").toInt()
+        versionName = project.findProperty("versionName") as String? ?: "1.0"
     }
 
     signingConfigs {
-        // CI signs release builds when a keystore is provided (see README); otherwise
-        // the release APK is left unsigned.
-        val keystore = System.getenv("ANDROID_KEYSTORE_PATH")
+        // Release builds are signed with the Google Play upload key when one is configured:
+        // locally from keystore.properties (git-ignored, see README), in CI from environment
+        // variables. Otherwise the release build is left unsigned.
+        val localProps = rootProject.file("keystore.properties")
+        val props = Properties().apply { if (localProps.exists()) localProps.inputStream().use { load(it) } }
+        val keystore = props.getProperty("storeFile") ?: System.getenv("ANDROID_KEYSTORE_PATH")
         if (keystore != null) {
             create("release") {
-                storeFile = file(keystore)
-                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
-                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                storeFile = rootProject.file(keystore)
+                storePassword = props.getProperty("storePassword") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = props.getProperty("keyAlias") ?: System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = props.getProperty("keyPassword") ?: System.getenv("ANDROID_KEY_PASSWORD")
             }
         }
     }

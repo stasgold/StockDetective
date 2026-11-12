@@ -39,12 +39,14 @@ jobs:
             export ANDROID_KEY_ALIAS="${{ secrets.ANDROID_KEY_ALIAS }}"
             export ANDROID_KEY_PASSWORD="${{ secrets.ANDROID_KEY_PASSWORD }}"
           fi
-          ./gradlew :app:assembleDebug :app:assembleRelease --console=plain
+          ./gradlew :app:assembleDebug :app:assembleRelease :app:bundleRelease --console=plain
 
       - uses: actions/upload-artifact@v4
         with:
           name: StocksDetective-android
-          path: app/build/outputs/apk/**/*.apk
+          path: |
+            app/build/outputs/apk/**/*.apk
+            app/build/outputs/bundle/release/*.aab
 
       - name: Name the APKs
         run: |

@@ -8,3 +8,5 @@ captures/
 .kotlin/
 *.keystore
 !debug.keystore
+keystore.properties
+*.jks

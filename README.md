@@ -50,6 +50,10 @@ Extras:
 - `./gradlew :app:testDebugUnitTest -Pscreenshots --tests '*ScreenshotTests*'` renders every screen with Robolectric into `docs/screenshots/`.
 - Debug launch options: `adb shell am start -n com.stocksdetective.app/.MainActivity --ez seedDemoPortfolio true --es openCase NVDA` (`--es openTab briefing|settings|import` also works).
 
+### Google Play
+
+`./gradlew :app:bundleRelease -PversionCode=N` builds `app/build/outputs/bundle/release/app-release.aab`, signed with the upload key from a git-ignored `keystore.properties` (or the CI secrets below). The store listing, graphics, Data safety answers and the release checklist are in [`play/`](play/README.md). The privacy policy is [`docs/PRIVACY.md`](docs/PRIVACY.md).
+
 ### GitHub Actions
 
 [`.github/workflows/android.yml`](.github/workflows/android.yml) runs the tests, builds debug and release APKs, and publishes them on every push as a pre-release named **Android build N** on the [Releases page](../../releases) (also kept as the **StocksDetective-android** workflow artifact). To install, open the debug APK from the release on your phone. To sign release builds, add these repository secrets:
