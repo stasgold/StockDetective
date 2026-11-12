@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write # publish the APKs as a GitHub Release
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -42,6 +45,29 @@ jobs:
         with:
           name: StocksDetective-android
           path: app/build/outputs/apk/**/*.apk
+
+      - name: Name the APKs
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/StocksDetective-${{ github.run_number }}-debug.apk
+          cp app/build/outputs/apk/release/*.apk dist/StocksDetective-${{ github.run_number }}-release$( [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || echo "-unsigned").apk
+
+      # Every push (not pull requests) becomes a downloadable pre-release with the APKs attached.
+      - name: Publish GitHub Release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-build-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: Android build ${{ github.run_number }} (${{ github.ref_name }})
+          prerelease: true
+          files: dist/*.apk
+          body: |
+            Stocks Detective for Android, built from ${{ github.sha }}.
+
+            **Install:** download `StocksDetective-${{ github.run_number }}-debug.apk` on your phone and open it
+            (allow "Install unknown apps" for your browser when asked). The `-unsigned` release APK must be
+            signed before it can be installed.
 
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -50,7 +50,7 @@ Extras:
 
 ### GitHub Actions
 
-[`.github/workflows/android.yml`](.github/workflows/android.yml) runs the tests and uploads debug and release APKs as the **StocksDetective-android** artifact. To sign release builds, add these repository secrets:
+[`.github/workflows/android.yml`](.github/workflows/android.yml) runs the tests, builds debug and release APKs, and publishes them on every push as a pre-release named **Android build N** on the [Releases page](../../releases) (also kept as the **StocksDetective-android** workflow artifact). To install, open the debug APK from the release on your phone. To sign release builds, add these repository secrets:
 
 | Secret | Value |
 |---|---|
